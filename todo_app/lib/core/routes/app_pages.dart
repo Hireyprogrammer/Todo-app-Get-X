@@ -4,6 +4,7 @@ import 'package:todo_app/presentation/auth/signup_screen.dart';
 import 'package:todo_app/presentation/auth/signin_screen.dart';
 import 'package:todo_app/presentation/home/home_screen.dart';
 import 'package:todo_app/presentation/auth/verify_email_screen.dart';
+import 'package:todo_app/bindings/home_binding.dart';
 
 part 'app_routes.dart';
 
@@ -26,6 +27,7 @@ class AppPages {
     GetPage(
       name: Routes.HOME,
       page: () => const HomeScreen(),
+      binding: HomeBinding(),
     ),
     GetPage(
       name: Routes.VERIFY_EMAIL,

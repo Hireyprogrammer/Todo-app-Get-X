@@ -8,6 +8,11 @@ class ApiConstants {
   static const String login = '/auth/login';
   static const String verifyEmail = '/auth/verify-email';
   
+  // Task endpoints
+  static const String tasks = '/tasks';
+  static String toggleTask(String id) => '/tasks/$id/toggle';
+  static String deleteTask(String id) => '/tasks/$id';
+  
   // Headers
   static Map<String, String> headers(String? token) => {
     'Content-Type': 'application/json',

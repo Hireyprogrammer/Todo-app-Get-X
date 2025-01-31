@@ -5,9 +5,22 @@ import 'package:todo_app/controllers/auth_controller.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:todo_app/presentation/tasks/add_task_screen.dart';
+import '../../controllers/task_controller.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch tasks when screen loads
+    Get.find<TaskController>().fetchTasks();
+  }
 
   void _showProfileMenu(BuildContext context, AuthController authController) {
     showModalBottomSheet(
@@ -90,9 +103,9 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Get.back();
-                          authController.logout();
+                          await authController.logout();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF7C9A92),
@@ -143,6 +156,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AuthController authController = Get.find<AuthController>();
+    final TaskController taskController = Get.find<TaskController>();
     
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -236,68 +250,98 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 20),
               // Tasks List
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.08),
-                        spreadRadius: 5,
-                        blurRadius: 7,
-                        offset: const Offset(0, 3),
+                child: Obx(() {
+                  if (taskController.isLoading.value) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF7C9A92),
                       ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, 
-                              size: 20, 
-                              color: Colors.blue,
+                    );
+                  }
+                  
+                  if (taskController.hasError.value) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Colors.red.shade300,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error loading tasks',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: Colors.red.shade300,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Daily Tasks',
+                          ),
+                          TextButton(
+                            onPressed: () => taskController.fetchTasks(),
+                            child: Text(
+                              'Try Again',
                               style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF2D3142),
+                                color: const Color(0xFF7C9A92),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 15),
-                        Expanded(
-                          child: ListView(
-                            children: [
-                              _buildTaskItem('Follow Oluwafisayomi.dev on Twitter.', true)
-                                .animate()
-                                .fadeIn(delay: 100.ms)
-                                .slideX(),
-                              _buildTaskItem('Learn Figma by 4pm.', true)
-                                .animate()
-                                .fadeIn(delay: 200.ms)
-                                .slideX(),
-                              _buildTaskItem('Coding at 9am.', false)
-                                .animate()
-                                .fadeIn(delay: 300.ms)
-                                .slideX(),
-                              _buildTaskItem('Watch Mr Beasts Videos.', false)
-                                .animate()
-                                .fadeIn(delay: 400.ms)
-                                .slideX(),
-                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                        ],
+                      ),
+                    );
+                  }
+                  
+                  if (taskController.tasks.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            'assets/images/no-tasks.png',
+                            height: 120,
+                          ).animate()
+                            .fadeIn()
+                            .scale(),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No Tasks Added Yet',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF2D3142),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap + to add your first task',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate()
+                      .fadeIn()
+                      .scale();
+                  }
+
+                  return ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: taskController.tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = taskController.tasks[index];
+                      return _buildTaskItem(
+                        task.title,
+                        task.completed,
+                        onTap: () => taskController.toggleTask(task.id),
+                        onDelete: () => taskController.deleteTask(task.id),
+                      ).animate()
+                        .fadeIn(delay: Duration(milliseconds: 100 * index))
+                        .slideX();
+                    },
+                  );
+                }),
               ).animate()
                 .fadeIn(duration: 800.ms)
                 .slideY(begin: 30, end: 0),
@@ -308,7 +352,10 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTaskItem(String task, bool isCompleted) {
+  Widget _buildTaskItem(String task, bool isCompleted, {
+    required VoidCallback onTap,
+    required VoidCallback onDelete,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -319,24 +366,27 @@ class HomeScreen extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: isCompleted ? Colors.green.withOpacity(0.2) : Colors.white,
-                border: Border.all(
-                  color: isCompleted ? Colors.green : Colors.grey.shade400,
-                  width: 2,
+            GestureDetector(
+              onTap: onTap,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isCompleted ? Colors.green.withOpacity(0.2) : Colors.white,
+                  border: Border.all(
+                    color: isCompleted ? Colors.green : Colors.grey.shade400,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                borderRadius: BorderRadius.circular(6),
+                child: isCompleted
+                    ? const Icon(
+                        Icons.check_rounded,
+                        size: 16,
+                        color: Colors.green,
+                      )
+                    : null,
               ),
-              child: isCompleted
-                  ? const Icon(
-                      Icons.check_rounded,
-                      size: 16,
-                      color: Colors.green,
-                    )
-                  : null,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -348,6 +398,13 @@ class HomeScreen extends StatelessWidget {
                   color: isCompleted ? Colors.grey : const Color(0xFF2D3142),
                   height: 1.3,
                 ),
+              ),
+            ),
+            IconButton(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete),
+              style: IconButton.styleFrom(
+                foregroundColor: Colors.red,
               ),
             ),
           ],

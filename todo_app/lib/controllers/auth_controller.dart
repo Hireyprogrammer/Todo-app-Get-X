@@ -5,22 +5,40 @@ import 'package:todo_app/core/routes/app_pages.dart';
 import 'package:todo_app/core/widgets/loading_overlay.dart';
 import 'package:todo_app/core/services/logger_service.dart';
 import 'package:todo_app/core/utils/notification_helper.dart';
+import 'package:todo_app/controllers/task_controller.dart';
+import 'package:flutter/widgets.dart';
 
 class AuthController extends GetxController {
   final AuthService _authService = AuthService();
-  final StorageService _storage = StorageService();
+  final StorageService _storage = Get.find<StorageService>();
   final RxBool isLoading = false.obs;
   final RxBool isPasswordVisible = false.obs;
   final RxString errorMessage = ''.obs;
+  final RxBool isAuthenticated = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    checkAuth();
+    // Add back the auth state listener
+    ever(isAuthenticated, handleAuthenticationChanged);
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      checkAuthStatus();
+    });
   }
 
-  void checkAuth() {
-    if (_storage.isLoggedIn) {
+  void checkAuthStatus() {
+    final token = _storage.getToken();
+    // Update auth state based on token
+    isAuthenticated.value = token != null && token.isNotEmpty;
+  }
+
+  void handleAuthenticationChanged(bool authenticated) {
+    if (!authenticated) {
+      // No token -> Go to SignIn
+      Get.offAllNamed(Routes.SIGNIN);
+    } else {
+      // Has token -> Go to Home
       Get.offAllNamed(Routes.HOME);
     }
   }
@@ -62,17 +80,16 @@ class AuthController extends GetxController {
 
   Future<void> signIn(String email, String password) async {
     try {
-      // LoadingOverlay.show();
-      errorMessage.value = '';
+      LoadingOverlay.show();
       
       final token = await _authService.login(email, password);
+      await _storage.saveToken(token);
+      
+      isAuthenticated.value = true;
       NotificationHelper.showSuccess('Welcome back!');
-       LoadingOverlay.hide();
-      Get.offAllNamed(Routes.HOME);
-       
     } catch (e) {
+      isAuthenticated.value = false;
       NotificationHelper.showError(e.toString());
-      errorMessage.value = e.toString();
     } finally {
       LoadingOverlay.hide();
     }
@@ -80,14 +97,10 @@ class AuthController extends GetxController {
 
   Future<void> logout() async {
     try {
-      LoadingOverlay.show();
-      await _authService.logout();
-      NotificationHelper.showSuccess('Logged out successfully');
-      Get.offAllNamed(Routes.SIGNIN);
+      await _storage.removeToken();
+      isAuthenticated.value = false;
     } catch (e) {
       NotificationHelper.showError(e.toString());
-    } finally {
-      LoadingOverlay.hide();
     }
   }
 

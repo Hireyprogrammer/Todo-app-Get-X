@@ -73,11 +73,16 @@ class AuthService {
       if (response.statusCode == 200) {
         final token = response.data['token'];
         await _storage.saveToken(token);
+        
+        AppLogger.authSuccess('Login successful. Token saved.');
+        AppLogger.storageOperation('Token saved to storage: ${token.substring(0, 20)}...');
+        
         return token;
       }
       
       throw response.data['message'] ?? 'Login failed';
     } catch (e) {
+      AppLogger.authError('Login', e);
       throw 'Login failed: $e';
     }
   }

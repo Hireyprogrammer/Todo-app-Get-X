@@ -1,39 +1,49 @@
 import 'package:get_storage/get_storage.dart';
 import 'package:todo_app/core/services/logger_service.dart';
+import 'package:get/get.dart';
 
-class StorageService {
+class StorageService extends GetxService {
+  static StorageService get to => Get.find<StorageService>();
+  
   final _box = GetStorage();
   static const _tokenKey = 'auth_token';
 
-  Future<void> init() async {
+  Future<StorageService> init() async {
     await GetStorage.init();
+    return this;
   }
 
   Future<void> saveToken(String token) async {
-    print('DEBUG - Full Token: $token'); // Temporary debug print
-    AppLogger.storageOperation('Storage: Saving auth token: $token');
     try {
       await _box.write(_tokenKey, token);
-      AppLogger.storageOperation('Storage: Token saved successfully in GetStorage');
-      
-      // Verify stored token
-      final storedToken = _box.read(_tokenKey);
-      AppLogger.storageOperation('Storage: Verified stored token: $storedToken');
+      AppLogger.storageOperation('Token saved successfully');
     } catch (e) {
       AppLogger.storageError('saveToken', e);
-      rethrow;
+      throw 'Failed to save token: $e';
     }
   }
 
   String? getToken() {
-    final token = _box.read(_tokenKey);
-    AppLogger.storageOperation('Storage: Current stored token: $token');
-    return token;
+    try {
+      return _box.read(_tokenKey);
+    } catch (e) {
+      AppLogger.storageError('getToken', e);
+      return null;
+    }
   }
 
   Future<void> removeToken() async {
-    await _box.remove(_tokenKey);
+    try {
+      await _box.remove(_tokenKey);
+      AppLogger.storageOperation('Token removed from storage');
+    } catch (e) {
+      AppLogger.storageError('removeToken', e);
+      throw 'Failed to remove token: $e';
+    }
   }
 
-  bool get isLoggedIn => getToken() != null;
+  bool get isLoggedIn {
+    final token = getToken();
+    return token != null && token.isNotEmpty;
+  }
 } 
