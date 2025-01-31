@@ -4,7 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 9000;
 
 // CORS Configuration
 const corsOptions = {
@@ -52,12 +52,10 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
-const taskListRoutes = require('./routes/taskListRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 
 // Route Prefixing
 app.use('/api/auth', authRoutes);
-app.use('/api/tasklists', taskListRoutes);
 app.use('/api/tasks', taskRoutes);
 
 // Health Check Endpoint
