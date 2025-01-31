@@ -217,33 +217,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     return SizedBox(
       width: double.infinity,
       height: 55,
-      child: Obx(() => ElevatedButton(
-        onPressed: taskController.isLoading.value 
-          ? null
-          : () async {
-              final tasks = _controllers
-                  .map((controller) => controller.text)
-                  .where((text) => text.isNotEmpty)
-                  .toList();
+      child: ElevatedButton(
+        onPressed: () async {
+          final tasks = _controllers
+              .map((controller) => controller.text)
+              .where((text) => text.isNotEmpty)
+              .toList();
               
-              if (tasks.isNotEmpty) {
-                for (final task in tasks) {
-                  await taskController.createTask(task);
-                }
-                Get.back();
-              } else {
-                Get.snackbar(
-                  'Empty Tasks',
-                  'Please enter at least one task',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.red.shade100,
-                  colorText: Colors.red.shade900,
-                  margin: const EdgeInsets.all(20),
-                  borderRadius: 12,
-                  duration: const Duration(seconds: 2),
-                );
-              }
-            },
+          if (tasks.isNotEmpty) {
+            for (final task in tasks) {
+              await taskController.createTask(task);
+            }
+          }
+        },
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF7C9A92),
           foregroundColor: Colors.white,
@@ -253,23 +239,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           elevation: 2,
           shadowColor: const Color(0xFF7C9A92).withOpacity(0.3),
         ),
-        child: taskController.isLoading.value
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            )
-          : Text(
-              'Add to list',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-      )),
+        child: Text(
+          'Add to list',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     ).animate()
       .fadeIn(delay: 500.ms)
       .slideY(begin: 10, end: 0);
