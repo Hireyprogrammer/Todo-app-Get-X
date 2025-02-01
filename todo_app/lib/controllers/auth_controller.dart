@@ -29,8 +29,17 @@ class AuthController extends GetxController {
 
   void checkAuthStatus() {
     final token = _storage.getToken();
-    // Update auth state based on token
-    isAuthenticated.value = token != null && token.isNotEmpty;
+    if (token != null) {
+      isAuthenticated.value = true;
+      Get.offAllNamed(Routes.HOME);
+    } else {
+      // Check if onboarding is completed
+      if (_storage.isOnboardingComplete()) {
+        Get.offAllNamed(Routes.SIGNIN);
+      } else {
+        Get.offAllNamed(Routes.ONBOARDING);
+      }
+    }
   }
 
   void handleAuthenticationChanged(bool authenticated) {

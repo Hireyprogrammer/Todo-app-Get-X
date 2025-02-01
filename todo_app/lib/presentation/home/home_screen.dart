@@ -69,14 +69,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const Divider(),
             // Menu Items
-            _buildMenuItem(
-              icon: Icons.person_outline,
-              title: 'Edit Profile',
-              onTap: () {
-                Get.back();
-                // Add navigation to edit profile screen
-              },
-            ),
+            // _buildMenuItem(
+            //   icon: Icons.person_outline,
+            //   title: 'Edit Profile',
+            //   onTap: () {
+            //     Get.back();
+            //     // Add navigation to edit profile screen
+            //   },
+            // ),
             _buildMenuItem(
               icon: Icons.logout_rounded,
               title: 'Logout',
@@ -196,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
               AnimatedTextKit(
                 animatedTexts: [
                   TypewriterAnimatedText(
-                    'Welcome Fisayomi',
+                    'Welcome to Todo-App',
                     textStyle: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

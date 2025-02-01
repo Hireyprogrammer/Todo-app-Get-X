@@ -7,6 +7,7 @@ class StorageService extends GetxService {
   
   final _box = GetStorage();
   static const _tokenKey = 'auth_token';
+  static const _onboardingKey = 'onboarding_complete';
 
   Future<StorageService> init() async {
     await GetStorage.init();
@@ -45,5 +46,25 @@ class StorageService extends GetxService {
   bool get isLoggedIn {
     final token = getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  // Onboarding methods
+  bool isOnboardingComplete() {
+    try {
+      return _box.read(_onboardingKey) ?? false;
+    } catch (e) {
+      AppLogger.storageError('isOnboardingComplete', e);
+      return false;
+    }
+  }
+
+  Future<void> markOnboardingComplete() async {
+    try {
+      await _box.write(_onboardingKey, true);
+      AppLogger.storageOperation('Onboarding marked as complete');
+    } catch (e) {
+      AppLogger.storageError('markOnboardingComplete', e);
+      throw 'Failed to mark onboarding as complete: $e';
+    }
   }
 } 

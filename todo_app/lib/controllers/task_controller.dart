@@ -38,9 +38,9 @@ class TaskController extends GetxController {
       final task = await _taskService.createTask(title);
       tasks.add(task);
       NotificationHelper.showSuccess('Task added successfully');
-      Get.back(); // Return to home screen
+      Get.back(); // Return to home screen after success
     } catch (e) {
-      NotificationHelper.showError(e.toString());
+      NotificationHelper.showError('Failed to add task: $e');
     }
   }
 

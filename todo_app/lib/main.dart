@@ -5,16 +5,16 @@ import 'package:todo_app/core/theme/app_theme.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:todo_app/services/storage_service.dart';
 import 'package:todo_app/controllers/auth_controller.dart';
+import 'package:todo_app/core/services/connectivity_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
-  
-  Get.lazyPut<StorageService>(
-    () => StorageService(),
-    fenix: true,
-  );
-  
+
+  // Initialize services
+  await Get.putAsync(() => StorageService().init());
+  await Get.putAsync(() => ConnectivityService().init());
+
   runApp(const MyApp());
 }
 

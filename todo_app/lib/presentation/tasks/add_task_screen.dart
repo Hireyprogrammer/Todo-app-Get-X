@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 import '../../controllers/task_controller.dart';
+import '../../core/utils/notification_helper.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -14,10 +15,90 @@ class AddTaskScreen extends StatefulWidget {
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
-  final List<TextEditingController> _controllers = List.generate(
-    3,
-    (index) => TextEditingController(),
-  );
+  // Track input fields dynamically
+  final RxList<TextEditingController> _controllers = <TextEditingController>[
+    TextEditingController(),
+  ].obs;
+
+  bool get canAddMore => _controllers.length < 5;
+
+  Widget _buildTaskInputs() {
+    return Obx(() => Column(
+      children: [
+        ...List.generate(_controllers.length, (index) => 
+          _buildTaskInput(index)
+        ),
+        if (canAddMore)
+          TextButton.icon(
+            onPressed: () {
+              _controllers.add(TextEditingController());
+            },
+            icon: const Icon(Icons.add_circle_outline, color: Color(0xFF7C9A92)),
+            label: Text(
+              'Add another task',
+              style: GoogleFonts.poppins(
+                color: const Color(0xFF7C9A92),
+              ),
+            ),
+          ).animate().fadeIn(),
+      ],
+    ));
+  }
+
+  Widget _buildTaskInput(int index) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controllers[index],
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  hintText: 'Enter your task...',
+                  hintStyle: GoogleFonts.poppins(
+                    color: Colors.grey.shade400,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ),
+            ),
+            if (_controllers.length > 1)
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                onPressed: () {
+                  _controllers[index].dispose();
+                  _controllers.removeAt(index);
+                },
+              ),
+          ],
+        ),
+      ),
+    ).animate()
+      .fadeIn(delay: Duration(milliseconds: 200 * index))
+      .slideX();
+  }
 
   @override
   void dispose() {
@@ -145,7 +226,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     const SizedBox(height: 25),
                     
                     // Task Input Fields with animations
-                    ...List.generate(3, (index) => _buildTaskInput(index)),
+                    _buildTaskInputs(),
                     
                     const SizedBox(height: 30),
                     
@@ -161,56 +242,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
   }
 
-  Widget _buildTaskInput(int index) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: TextField(
-          controller: _controllers[index],
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            hintText: 'Enter your task...',
-            hintStyle: GoogleFonts.poppins(
-              color: Colors.grey.shade400,
-            ),
-            prefixIcon: Icon(
-              Icons.check_circle_outline,
-              color: Colors.grey.shade400,
-            ),
-            suffixIcon: IconButton(
-              icon: Icon(
-                Icons.clear_rounded,
-                color: Colors.grey.shade400,
-              ),
-              onPressed: () {
-                _controllers[index].clear();
-              },
-            ),
-          ),
-        ),
-      ),
-    ).animate()
-      .fadeIn(delay: Duration(milliseconds: 200 * index))
-      .slideX();
-  }
-
   Widget _buildAddButton() {
     final taskController = Get.find<TaskController>();
     
@@ -220,7 +251,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       child: ElevatedButton(
         onPressed: () async {
           final tasks = _controllers
-              .map((controller) => controller.text)
+              .map((controller) => controller.text.trim())
               .where((text) => text.isNotEmpty)
               .toList();
               
@@ -228,6 +259,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             for (final task in tasks) {
               await taskController.createTask(task);
             }
+          } else {
+            NotificationHelper.showError('Please enter at least one task');
           }
         },
         style: ElevatedButton.styleFrom(
@@ -240,7 +273,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           shadowColor: const Color(0xFF7C9A92).withOpacity(0.3),
         ),
         child: Text(
-          'Add to list',
+          'Add Task to list',
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
