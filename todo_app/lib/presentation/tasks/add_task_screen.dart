@@ -259,6 +259,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             for (final task in tasks) {
               await taskController.createTask(task);
             }
+            // Clear all text controllers
+            for (var controller in _controllers) {
+              controller.clear();
+            }
+            // Show success message
+            Get.snackbar(
+              'Success',
+              'Tasks added successfully!',
+              snackPosition: SnackPosition.TOP,
+              backgroundColor: const Color(0xFF7C9A92),
+              colorText: Colors.white,
+              duration: const Duration(seconds: 2),
+              margin: const EdgeInsets.all(10),
+              borderRadius: 10,
+              icon: const Icon(Icons.check_circle, color: Colors.white),
+            );
           } else {
             NotificationHelper.showError('Please enter at least one task');
           }

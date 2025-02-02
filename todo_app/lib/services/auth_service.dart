@@ -8,24 +8,23 @@ class AuthService {
   final Dio _dio = Dio(BaseOptions(
     baseUrl: ApiConstants.baseUrl,
     validateStatus: (status) => status! < 500,
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
   ));
-  
+
   final StorageService _storage = StorageService();
 
-  Future<Map<String, dynamic>> register(String username, String email, String password) async {
+  Future<Map<String, dynamic>> register(
+      String username, String email, String password) async {
     AppLogger.authStart('Registration');
     AppLogger.apiRequest('${ApiConstants.register} - User: $email');
-    
+
     try {
       final response = await _dio.post(ApiConstants.register, data: {
         'username': username,
         'email': email,
         'password': password,
       });
-
-     
 
       if (response.statusCode == 201) {
         AppLogger.authSuccess('Registration');
@@ -73,13 +72,14 @@ class AuthService {
       if (response.statusCode == 200) {
         final token = response.data['token'];
         await _storage.saveToken(token);
-        
+
         AppLogger.authSuccess('Login successful. Token saved.');
-        AppLogger.storageOperation('Token saved to storage: ${token.substring(0, 20)}...');
-        
+        AppLogger.storageOperation(
+            'Token saved to storage: ${token.substring(0, 20)}...');
+
         return token;
       }
-      
+
       throw response.data['message'] ?? 'Login failed';
     } catch (e) {
       AppLogger.authError('Login', e);
@@ -89,7 +89,6 @@ class AuthService {
 
   Future<void> logout() async {
     await _storage.removeToken();
- 
   }
 
   Future<TokenResponse> refreshToken(String refreshToken) async {
@@ -97,7 +96,7 @@ class AuthService {
       final response = await _dio.post('/auth/refresh', data: {
         'refreshToken': refreshToken,
       });
-      
+
       return TokenResponse.fromJson(response.data);
     } catch (e) {
       throw 'Failed to refresh token';
@@ -117,4 +116,4 @@ class TokenResponse {
       refreshToken: json['refreshToken'],
     );
   }
-} 
+}
